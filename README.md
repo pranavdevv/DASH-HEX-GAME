@@ -23,10 +23,10 @@ The map consists of an outer and a inner hexagon. Once a round is completed in t
   2.3 If Nobody wins, attacker goes to previous position.
 
 # Point distribution
-movement -> +1 point
-attack success -> +3 points
-defense success -> +2 points
-reach center -> +2 point
+1. movement -> +1 point
+2. attack success -> +3 points
+3. defense success -> +2 points
+4. Reach center -> +2 point
 
 NOTE: AS YOU CAN SEE THE GAME IS DESIGNED IN SUCH A WAY TO DISCOURAGE SAFE PLAY AND GO FOR AGGRESSION. THIS POINT SYSTEM IS CRUDE AND NOT PERFECT SO MAYBE YOU CAN IMPROVISE AND MAKE YOUR OWN POINTS SYSTEM. SORRY FOR THE INCONVENIENCE.
 
@@ -34,6 +34,8 @@ NOTE: AS YOU CAN SEE THE GAME IS DESIGNED IN SUCH A WAY TO DISCOURAGE SAFE PLAY 
 Additional debug options are given on the top right to cycle thru turns, disable a turn and disabling dice range.
 
 # Additional Notes:
+Coins of same team cannot exist in the same position.
+
 The coin wont overshoot if its near the central end point.
 e.g if distance between the coin and the central endpoint is 3, an input of 4 will give an error and ask again.
 
