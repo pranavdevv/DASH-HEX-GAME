@@ -6,7 +6,7 @@ hardware
 1. Dice x 1
 
 Software
-Visual Studi Code.
+1. Visual Studio Code 
 
 # HOW TO USE
 1. Download source code
