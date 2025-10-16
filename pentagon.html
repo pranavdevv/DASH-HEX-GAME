@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pentagon Board Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(to bottom, #0C0C1E, #1A1A2E);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            color: white;
+        }
+        #game-container, #scoreboard-view, #questionnaire-view {
+            position: absolute;
+            width: 90vmin;
+            max-width: 1600px;
+            height: auto;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+        }
+        .coin {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .coin.moving {
+            filter: drop-shadow(0 0 8px #f9d923) drop-shadow(0 0 16px #e94560);
+            transition: filter 0.3s;
+        }
+        .selectable {
+            stroke: white;
+            stroke-width: 4px;
+            animation: pulse 1.5s infinite;
+        }
+        .selected {
+            stroke: limegreen;
+            stroke-width: 6px;
+            animation: none;
+        }
+        @keyframes pulse {
+            0% { fill-opacity: 1; }
+            50% { fill-opacity: 0.2; }
+            100% { fill-opacity: 1; }
+        }
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            left: -370px;
+            transform: none;
+            background: rgba(10,10,30,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00FF7F;
+            box-shadow: 0 0 15px rgba(0,255,127,0.5);
+            text-align: left;
+            width: auto;
+            max-width: 250px;
+            z-index: 10;
+        }
+        #turn-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #dice-input {
+            width: 60px;
+            padding: 5px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        button {
+            padding: 8px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 5px;
+            border: none;
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            color: white;
+            margin-top: 10px;
+            box-shadow: 0 0 10px #FF6B6B;
+            transition: box-shadow 0.3s;
+        }
+        button:hover {
+            box-shadow: 0 0 20px #FF6B6B;
+        }
+        #scoreboard-view {
+            display: none;
+            background: rgba(12,12,30,0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 20px rgba(255,215,0,0.5);
+            text-align: center;
+        }
+        #scoreboard-view h1 {
+            margin-top: 0;
+        }
+        .score-entry {
+            font-size: 1.8em;
+            margin: 15px 0;
+        }
+        #questionnaire-view {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+        }
+        #questionnaire-content {
+            display: flex;
+            flex-direction: column;
+            align-items: left;
+            text-align: left;
+            background: rgba(12,12,30,0.9);
+            padding: 50px;
+            border-radius: 10px;
+            border: 2px solid #4ECDC4;
+            box-shadow: 0 0 20px rgba(78,205,196,0.5);
+            max-width: 1200px;
+            width: 100%;
+            box-sizing: border-box;
+            max-height: 80vh;
+            overflow: auto;
+        }
+        #questionnaire-view h1 {
+            margin-top: 0;
+        }
+        #question-text {
+            font-size: 3em;
+            padding: 10px;
+            margin: 20px 0;
+            white-space: pre-line;
+            text-align: left;
+            padding-left: 20px;
+        }
+        #question-options {
+            font-size: 2.5em;
+            margin: 10px 0;
+            text-align: left;
+            padding-left: 20px;
+            padding-right: 490px;
+            padding-bottom:120px;
+            white-space: pre-line;
+        }
+        #questionnaire-answer {
+            width: 200px;
+            padding: 10px;
+            font-size: 1.5em;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #questionnaire-view button {
+            font-size: 1em;
+            padding: 10px 20px;
+        }
+        #move-count-display {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 18px;
+            font-weight: 900;
+            color: #FF6B6B;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #FF6B6B, 0 0 20px #FF6B6B, 0 0 30px #FF6B6B;
+            transition: transform 0.2s;
+            user-select: none;
+        }
+        #junction-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+        }
+        #junction-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10,10,30,0.95);
+            padding: 30px 40px;
+            border-radius: 18px;
+            border: 3px solid #FF69B4;
+            box-shadow: 0 0 30px rgba(255,105,180,0.5);
+            text-align: center;
+        }
+        #junction-modal p {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #f9d923;
+        }
+        #junction-modal button {
+            margin: 10px 20px 0 0;
+        }
+        /* --- NEW DEBUG PANEL STYLE --- */
+        #debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(10,10,30,0.95);
+            border-radius: 8px;
+            padding: 10px 15px;
+            border: 2px solid #FFD93D;
+            box-shadow: 0 0 15px rgba(255,217,61,0.5);
+            z-index: 2000;
+            color: #FFD93D;
+        }
+        #debug-toggle-btn {
+            background: #FFD93D;
+            color: #000;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        #debug-content {
+            display: none;
+        }
+        #debug-panel h4 {
+            margin: 0 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #FFD93D;
+        }
+        #debug-panel label {
+            display: block;
+            cursor: pointer;
+        }
+        #debug-panel button {
+            margin-top: 5px;
+        }
+
+        #win-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(12,12,30,0.95);
+            padding: 20px 40px;
+            border-radius: 15px;
+            border: 2px solid #FF6B6B;
+            box-shadow: 0 0 25px rgba(255,107,107,0.6);
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1500;
+            display: none;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        #win-message.show {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="ui-panel">
+            <div id="turn-controls">
+                <div id="turn-display">Current Turn: Team Red</div>
+                <div>
+                    <label for="dice-input">Enter Dice Roll: </label>
+                    <input type="number" id="dice-input" min="1" max="6">
+                    <button id="submit-dice">Submit</button>
+                    <button id="open-questionnaire-btn" style="display:none;">Answer Question</button>
+                </div>
+        <button id="view-scores-btn">View Scores</button>
+        <div id="tiebreaker-display" style="display: none;"></div>
+    </div>
+            <div id="move-count-display" style="font-size:2.5em;text-align:center;margin-bottom:10px;font-weight:bold;color:#ffffff;"></div>
+        </div>
+
+        <svg id="game-board" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+                    <polygon points="0,0 10,5 0,10" fill="#FF6B6B"/>
+                </marker>
+                <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+                    <polygon points="0,0 10,5 0,10" fill="#FF69B4"/>
+                </marker>
+                <marker id="arrow-yellow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+                    <polygon points="0,0 10,5 0,10" fill="#FFD93D"/>
+                </marker>
+                <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+                    <polygon points="0,0 10,5 0,10" fill="#00FF7F"/>
+                </marker>
+                <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+                    <polygon points="0,0 10,5 0,10" fill="#4ECDC4"/>
+                </marker>
+                <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="glow-yellow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="glow-purple" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="glow-lines" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="red-glow-lines">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feFlood flood-color="#FF6B6B" flood-opacity="0.8" result="flood"/>
+                    <feComposite in="flood" in2="blur" operator="in" result="glow"/>
+                    <feMerge>
+                        <feMergeNode in="glow"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="purple-glow-lines">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feFlood flood-color="#FF69B4" flood-opacity="0.8" result="flood"/>
+                    <feComposite in="flood" in2="blur" operator="in" result="glow"/>
+                    <feMerge>
+                        <feMergeNode in="glow"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="yellow-glow-lines">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feFlood flood-color="#FFD93D" flood-opacity="0.8" result="flood"/>
+                    <feComposite in="flood" in2="blur" operator="in" result="glow"/>
+                    <feMerge>
+                        <feMergeNode in="glow"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="green-glow-lines">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feFlood flood-color="#00FF7F" flood-opacity="0.8" result="flood"/>
+                    <feComposite in="flood" in2="blur" operator="in" result="glow"/>
+                    <feMerge>
+                        <feMergeNode in="glow"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="blue-glow-lines">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feFlood flood-color="#4ECDC4" flood-opacity="0.8" result="flood"/>
+                    <feComposite in="flood" in2="blur" operator="in" result="glow"/>
+                    <feMerge>
+                        <feMergeNode in="glow"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            <g id="hexagon-fills" stroke="#4A4A6A" stroke-width="4">
+                <polygon fill="#000000" points="250,10 457.8,130 457.8,370 250,490 42.2,370 42.2,130" />
+                <polygon fill="#0A0A1E" points="250,90 388.6,170 388.6,330 250,410 111.4,330 111.4,170" />
+                <polygon fill="#1E1E3F" points="250,170 319.3,210 319.3,290 250,330 180.7,290 180.7,210" />
+            </g>
+            <g id="radial-lines-primary" stroke="#FF6B6B" stroke-width="3" filter="url(#red-glow-lines)">
+                <line x1="250" y1="10" x2="250" y2="170" /><line x1="457.8" y1="370" x2="319.3" y2="290" /><line x1="250" y1="490" x2="250" y2="330" /><line x1="42.2" y1="370" x2="180.7" y2="290" /><line x1="42.2" y1="130" x2="180.7" y2="210" />
+            </g>
+            <g id="radial-lines-secondary" stroke="#4A4A6A" stroke-width="3">
+                <line x1="370.0" y1="70.0" x2="290.0" y2="190.0" /><line x1="457.8" y1="250.0" x2="319.3" y2="250.0" /><line x1="370.0" y1="430.0" x2="290.0" y2="310.0" /><line x1="130.0" y1="430.0" x2="210.0" y2="310.0" /><line x1="42.2" y1="250.0" x2="180.7" y2="250.0" /><line x1="130.0" y1="70.0" x2="210.0" y2="190.0" />
+            </g>
+            <g id="radial-lines-tertiary" stroke="#4A4A6A" stroke-width="3">
+                <g filter="url(#red-glow-lines)" stroke="#FF6B6B">
+                    <line x1="191.9" y1="39.6" x2="230.6" y2="179.9" />
+                    <line x1="268.4" y1="43.3" x2="254.7" y2="129.1" />
+                </g>
+                <line x1="308.1" y1="39.6" x2="269.4" y2="179.9" />
+                <line x1="416.0" y1="99.0" x2="306.1" y2="200.0" />
+                <line x1="457.8" y1="190.0" x2="319.3" y2="230.0" />
+                <g filter="url(#blue-glow-lines)" stroke="#4ECDC4">
+                    <line x1="457.8" y1="310.0" x2="319.3" y2="270.0" />
+                    <line x1="457.8" y1="370" x2="319.3" y2="290" />
+                    <line x1="398.9" y1="360.3" x2="352.2" y2="324.2" />
+                </g>
+                <line x1="457.8" y1="130" x2="319.3" y2="210" />
+                <line x1="416.0" y1="401.0" x2="306.1" y2="300.0" />
+                <g filter="url(#green-glow-lines)" stroke="#00FF7F">
+                    <line x1="308.1" y1="460.4" x2="269.4" y2="320.1" />
+                    <line x1="250" y1="490" x2="250" y2="330" />
+                    <line x1="217.6" y1="441.9" x2="229.2" y2="374" />
+                </g>
+                <line x1="191.9" y1="460.4" x2="230.6" y2="320.1" />
+                <g filter="url(#yellow-glow-lines)" stroke="#FFD93D">
+                    <line x1="84.0" y1="401.0" x2="193.9" y2="300.0" />
+                    <line x1="42.2" y1="370" x2="180.7" y2="290" />
+                    <line x1="71.2" y1="324.2" x2="123.2" y2="294.5" />
+                </g>
+                <line x1="42.2" y1="310.0" x2="180.7" y2="270.0" />
+                <g filter="url(#purple-glow-lines)" stroke="#FF69B4">
+                    <line x1="42.2" y1="190.0" x2="180.7" y2="230.0" />
+                    <line x1="42.2" y1="130" x2="180.7" y2="210" />
+                    <line x1="98.8" y1="134.4" x2="140.2" y2="169.4" />
+                </g>
+                <line x1="84.0" y1="99.0" x2="193.9" y2="200.0" />
+            </g>
+            <g id="team-starting-areas">
+                 <g id="team-red-start"><rect x="378" y="5" width="60" height="30" rx="5" fill="#1a1a2e" stroke="#FF6B6B" stroke-width="2" /><circle class="coin" id="red-coin-1" cx="394" cy="20" r="8" fill="#FF6B6B" filter="url(#glow-red)" /><circle class="coin" id="red-coin-2" cx="424" cy="20" r="8" fill="#FF6B6B" filter="url(#glow-red)" /></g>
+                <g id="team-blue-start"><rect x="460" y="220" width="30" height="60" rx="5" fill="#1a1a2e" stroke="#4ECDC4" stroke-width="2" /><circle class="coin" id="blue-coin-1" cx="475" cy="235" r="8" fill="#4ECDC4" filter="url(#glow-blue)" /><circle class="coin" id="blue-coin-2" cx="475" cy="265" r="8" fill="#4ECDC4" filter="url(#glow-blue)" /></g>
+                <g id="team-green-start"><rect x="373" y="465" width="60" height="30" rx="5" fill="#1a1a2e" stroke="#00FF7F" stroke-width="2" /><circle class="coin" id="green-coin-1" cx="389" cy="480" r="8" fill="#00FF7F" filter="url(#glow-green)" /><circle class="coin" id="green-coin-2" cx="419" cy="480" r="8" fill="#00FF7F" filter="url(#glow-green)" /></g>
+                <g id="team-yellow-start"><rect x="60" y="465" width="60" height="30" rx="5" fill="#1a1a2e" stroke="#FFD93D" stroke-width="2" /><circle class="coin" id="yellow-coin-1" cx="76" cy="480" r="8" fill="#FFD93D" filter="url(#glow-yellow)" /><circle class="coin" id="yellow-coin-2" cx="106" cy="480" r="8" fill="#FFD93D" filter="url(#glow-yellow)" /></g>
+                <g id="team-purple-start"><rect x="10" y="220" width="30" height="60" rx="5" fill="#1a1a2e" stroke="#FF69B4" stroke-width="2" /><circle class="coin" id="purple-coin-1" cx="25" cy="235" r="8" fill="#FF69B4" filter="url(#glow-purple)" /><circle class="coin" id="purple-coin-2" cx="25" cy="265" r="8" fill="#FF69B4" filter="url(#glow-purple)" /></g>
+            </g>
+
+        </svg>
+    </div>
+
+    <div id="scoreboard-view">
+        <h1>Scores</h1>
+        <div id="score-list"></div>
+        <button id="return-to-game-btn">Return to Game</button>
+    </div>
+
+    <div id="questionnaire-view">
+        <div id="questionnaire-content">
+            <h1>Questionnaire</h1>
+            <div id="question-text">What is 2+2?</div>
+            <div id="question-options"></div>
+            <input type="text" id="questionnaire-answer" placeholder="Enter your answer (a, b, c, d)">
+            <button id="submit-regular" style="background: green; margin-right: 10px;">Submit as Regular</button>
+            <button id="submit-tiebreaker" style="background-color: red;">Submit as Tiebreaker</button>
+        </div>
+    </div>
+
+    <div id="junction-modal-overlay">
+        <div id="junction-modal">
+            <p>Strategic Choice!</p>
+            <button id="stay-outer-btn-modal">Stay Outer</button>
+            <button id="enter-inner-btn-modal">Enter Inner</button>
+        </div>
+    </div>
+
+    <div id="tiebreaker-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); z-index: 1000;">
+        <div id="tiebreaker-modal" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10,10,30,0.95); padding: 30px 40px; border-radius: 18px; border: 3px solid #00FF7F; box-shadow: 0 0 30px rgba(0,255,127,0.5); text-align: center;">
+            <p>Tiebreaker Resolution</p>
+            <button id="send-attacker-home-btn">Send Attacker Home</button>
+            <button id="send-defender-home-btn">Send Defender Home</button>
+            <button id="none-btn">None</button>
+        </div>
+    </div>
+
+    <div id="debug-panel">
+        <button id="debug-toggle-btn">Toggle Debug</button>
+        <div id="debug-content">
+            <h4>Debug Options</h4>
+            <label>
+                <input type="checkbox" id="disable-next-turn-checkbox">
+                Disable Next Turn
+            </label>
+            <label>
+                <input type="checkbox" id="disable-dice-range-checkbox">
+                Disable Dice Range (1-49)
+            </label>
+            <button id="next-turn-btn">Next Turn</button>
+            <button id="prev-turn-btn">Previous Turn</button>
+        </div>
+    </div>
+
+    <div id="win-message"></div>
+
+    <!-- Audio elements for sound effects -->
+    <audio id="blip-sound" src="blip.mp3" preload="auto"></audio>
+    <audio id="correct-sound" src="correct.wav" preload="auto"></audio>
+    <audio id="fail-sound" src="fail.mp3" preload="auto"></audio>
+    <audio id="done-sound" src="done.mp3" preload="auto"></audio>
+    <audio id="war-sound" src="war.mp3" preload="auto"></audio>
+
+    <script src="gl.js"></script>
+</body>
+</html>
